@@ -16,7 +16,7 @@ var dbDolar *gorm.DB
 
 func main() {
 	var dbErr error
-	dbDolar, dbErr = gorm.Open(sqlite.Open("../dolar.db"), &gorm.Config{})
+	dbDolar, dbErr = gorm.Open(sqlite.Open("dolar.db"), &gorm.Config{})
 	if dbErr != nil {
 		log.Fatalln("failed to connect database", dbErr)
 	}
@@ -57,26 +57,28 @@ func CotacaoHandler(w http.ResponseWriter, r *http.Request) {
 
 	dolarExchange, err := GetCotacao(ctx)
 	if err != nil {
-		log.Println("err: ", err)
+		log.Println("get Cotacao error", err)
 		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 	err = SaveDatabase(ctx, dolarExchange)
 	if err != nil {
-		log.Println("err: ", err)
+		log.Println("save Database error", err)
 		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(dolarExchange)
+	json.NewEncoder(w).Encode(dolarExchange.DolarExchangeDB)
 }
 
 func GetCotacao(ctx context.Context) (*DolarExchange, error) {
-	ctx, cancel := context.WithTimeout(ctx, 2000*time.Millisecond)
+	ctx, cancel := context.WithTimeout(ctx, 200*time.Millisecond)
 	defer cancel()
 
 	req, err := http.NewRequestWithContext(ctx, "GET", "https://economia.awesomeapi.com.br/json/last/USD-BRL", nil)
 	if err != nil {
-		log.Println("err: ", err)
+		log.Println("get cotacao endpoint error", err)
 		return nil, err
 	}
 
@@ -95,7 +97,7 @@ func GetCotacao(ctx context.Context) (*DolarExchange, error) {
 	var dolarExchange DolarExchange
 	err = json.Unmarshal(body, &dolarExchange)
 	if err != nil {
-		log.Println("err: ", err)
+		log.Println("unmarshall error", err)
 		return nil, err
 	}
 	return &dolarExchange, nil
@@ -109,7 +111,7 @@ func SaveDatabase(ctx context.Context, dolarExchange *DolarExchange) error {
 
 	insertErr := insertDollarExchange(ctx, dolarExchange)
 	if insertErr != nil {
-		log.Println("insert database error: ", insertErr)
+		log.Println("insert database error", insertErr)
 		return insertErr
 	}
 
@@ -120,7 +122,7 @@ func insertDollarExchange(ctx context.Context, dolarExchange *DolarExchange) err
 	log.Println("insertDollarExchange started")
 	defer log.Println("insertDollarExchange ended")
 
-	dbErr := dbDolar.Create(&dolarExchange.DolarExchangeDB).Error
+	dbErr := dbDolar.WithContext(ctx).Create(&dolarExchange.DolarExchangeDB).Error
 	if dbErr != nil {
 		log.Println("error inserting db", dbErr)
 		return dbErr
