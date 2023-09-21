@@ -55,15 +55,15 @@ func CotacaoHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("CotacaoHandler started")
 	defer log.Println("CotacaoHandler ended")
 
-	dolarExchange, err := GetCotacao(ctx)
+	dolarExchange, err := getCotacao(ctx)
 	if err != nil {
-		log.Println("get Cotacao error", err)
+		log.Println("get cotacao error", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	err = SaveDatabase(ctx, dolarExchange)
+	err = saveDatabase(ctx, dolarExchange)
 	if err != nil {
-		log.Println("save Database error", err)
+		log.Println("save database error", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -72,7 +72,7 @@ func CotacaoHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(dolarExchange.DolarExchangeDB)
 }
 
-func GetCotacao(ctx context.Context) (*DolarExchange, error) {
+func getCotacao(ctx context.Context) (*DolarExchange, error) {
 	ctx, cancel := context.WithTimeout(ctx, 200*time.Millisecond)
 	defer cancel()
 
@@ -103,7 +103,7 @@ func GetCotacao(ctx context.Context) (*DolarExchange, error) {
 	return &dolarExchange, nil
 }
 
-func SaveDatabase(ctx context.Context, dolarExchange *DolarExchange) error {
+func saveDatabase(ctx context.Context, dolarExchange *DolarExchange) error {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Millisecond)
 	defer cancel()
 	log.Println("SaveDatabase started")

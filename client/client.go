@@ -11,6 +11,10 @@ import (
 	"time"
 )
 
+func main() {
+	GetCotacao()
+}
+
 type DolarExchange struct {
 	Bid string `json:"bid"`
 }
@@ -45,10 +49,6 @@ func GetCotacao() {
 	if err := writeCotacaoTxt(dolarExchange); err != nil {
 		log.Fatalln("error to write cotacao text", err)
 	}
-}
-
-func main() {
-	GetCotacao()
 }
 
 func writeCotacaoTxt(dolarExchange DolarExchange) error {
